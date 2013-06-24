@@ -75,7 +75,7 @@ Each file has a unique id, plus metadata such as platform constraints and other 
 
 ### Using FsRequire in a project
 
-To include a dependency in a project or directory, just create a special `fsrequire.config` file listing the ids of the dependencies.
+To include a dependency in a project or directory, just create a special `.require` file listing the ids of the dependencies.
 
 When `fsrequire` is run, for each config file detected, it will:
 
@@ -93,7 +93,7 @@ Clone the FsRequire repo from GitHub to your local machine.
 
 You can use the catalog.html page to view the contents.
 
-### 2. Installation
+### 2. Setup
 
 To setup FsRequire for a particular solution or project, you can use FSI interactively, or use command line scripts.
 
@@ -101,27 +101,27 @@ In FSI do:
 
 ```
 #load @"path/to/repo/fsrequire.fsx"
-FsRequire.Install("path/to/projects")
+FsRequire.Setup("path/to/projects")
 ```
 
 or from the command line:    
 
 ```
-FSI /path/to/repo/fsrequire.fsx -install path/to/projects 
+FSI /path/to/repo/fsrequire.fsx -setup path/to/projects 
 ```
     
 This will:
 
-* Create a `fsrequire.settings` file under your home directory (for exact location, see below).
-* An `_fsrequire` directory will be created under the solution root and under each project directory (if any).
-* An initial "fsrequire.config" file will be created in the _fsrequire directory.
-* For project based systems (e.g. VisualStudio/Xamarin/MonoDevelop), the `_fsrequire` directory and config file will be added to the project file.
+* Create a `fsrequire.config` file under your home directory (for exact location, see below).
+* An `_require` directory will be created under the solution root and under each project directory (if any).
+* An initial ".require" file will be created in the _require directory.
+* For project based systems (e.g. VisualStudio/Xamarin/MonoDevelop), the `_require` directory and config file will be added to the project file.
 
 ### 3. Editing the "requires" list
 
-After FsRequire is installed, you can edit the `fsrequire.config` file in a project to set up the required modules.
+After FsRequire is installed, you can edit the `.require` file in a project to set up the required modules.
 
-The content of a `fsrequire.config` file is:
+The content of a `.require` file is:
 
 * a key:value pair, where the key is "fsrequire" and the value is a comma separated list of library ids
 
@@ -151,11 +151,30 @@ Once you have created the dependencies, you can run `fsrequire` to update them:
 
 FSI /path/to/repo/fsrequire.fsx path/to/solution 
 
-* `fsrequire` will detect all the fsrequire.config files in the solution path and process them.
+* `fsrequire` will detect all the .require files in the solution path and process them.
 * For each config, all the requires will be parsed and looked up in the repository.
 * The default repo is the location of `fsrequire.fsx`.
 * All the depedendences of the requires will be extracted as well, to generate an update list.
 * For these files, copy them from the repo to the project and create project links for them, or just update them if outdated. (see below for exact algorithm).
+
+
+## Using FsRequire with source control and CI
+
+When in comes to source control, there are two obvious options:
+
+**1. Don't check in the libraries themselves, just the `.require` file.**
+
+In this case, the libraries would be fetched from the local repo at build time, (if combined with a pull) would be guaranteed to be up to date.
+
+**2. Do check in the source for the required libraries**
+
+In this case, there is the possibility that the libraries are not up to date.
+
+The libraries could be updated from the local repo at build time, as above, but this could mean that the commited source did not accurately reflect the latest update.
+
+Instead, FsRequire should offer a "test for changes" option that would check for changes but not copy them over.
+This could be used to force CI builds to fail if the committed libraries are not up to date.
+
 
 ## Using FsRequire as an author
 
@@ -167,16 +186,16 @@ In FSI do:
 
 ```
 #load @"path/to/repo/fsrequire.fsx"
-FsRequire.SetLogin("myname")
+FsRequire.SetAuthor("myname")
 ```
 
 or from the command line:    
 
 ```
-FSI /path/to/repo/fsrequire.fsx -setlogin "myname" 
+FSI /path/to/repo/fsrequire.fsx -setauthor "myname" 
 ```
 
-This will update the `fsrequire.settings` file in your home directory (for exact location, see below).
+This will update the `fsrequire.config` file in your home directory (for exact location, see below).
 
 ### 2. Add metadata to your file
 
@@ -359,4 +378,13 @@ In some cases, you may want to deploy and/or consume a pre-release or unstable v
   * As an client, you would need to switch your local cloned repo to use the experimental branch
   * Alternatively, you could clone someone's fork rather than the central repo.
 
+### Multiple repositories
 
+In some cases, you might want to have two repositories, a personal/private one and the central one. 
+
+This can be done by chaining the two so that the personal/private one is searched first, and then the central one. 
+
+### Stats
+
+It might be useful to allow the tool to send stats up to the cloud about what libraries it is using (opt-in only of course).
+This would enable accurate analytics such as tracking popularity and frequency.
